@@ -109,4 +109,4 @@ output_test = net(input_test.unsqueeze(0))  # Note the unsqueeze to add the batc
 predicted_label = torch.argmax(output_test).item()
 
 predicted_label_text = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
-print("Predicted label:", predicted_label_text)
+print("Predicted label:", predicted_label_text) 
