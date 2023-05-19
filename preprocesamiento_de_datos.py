@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-carpeta_audio = 'C:\\Users\\lenovo\\OneDrive\\Escritorio\\proyecto\\datos_de_entrenamiento'
+carpeta_audio = 'datos_de_entrenamiento'
 archivos_audio = os.listdir(carpeta_audio)
 n_fft = 1024
 num_caracteristicas_seleccionadas = 3

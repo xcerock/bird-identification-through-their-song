@@ -58,97 +58,54 @@ class BirdClassificationNet(nn.Module):
         self.fc2 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
-        x, _ = pad_packed_sequence(x, batch_first=True)  # Desempaquetar la secuencia
         x = torch.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
-
-# Crear una instancia de la red neuronal
-input_size = input_data.size(1)  # Tamaño de la capa de entrada
+input_size = input_data.size(1)  # Size of the input layer
 hidden_size = 64
 num_classes = len(set(etiquetas_convertidas))
 criterion = nn.CrossEntropyLoss()
-
-
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
-
-# Calcular las longitudes de las secuencias en el lote
-lengths = [torch.sum(input_data[i, :] != 0) for i in range(input_data.size(0))]
-
-# Definir la función de pérdida y el optimizador
-
-criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.001)
 
-
-
-# Crear un DataLoader para manejar los datos de entrenamiento
 batch_size = 4
 dataset = torch.utils.data.TensorDataset(input_data, labels)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-# Crear un DataLoader con shuffle=False
-dataloader = DataLoader(dataset, batch_size=5, shuffle=False)
-
-# Entrenamiento de la red neuronal
 num_epochs = 10
 
 for epoch in range(num_epochs):
     running_loss = 0.0
-    
     for batch_inputs, batch_labels in dataloader:
         optimizer.zero_grad()
-        
-        # Calcular las longitudes de las secuencias en el lote
-        lengths = [torch.sum(batch_inputs[i, :] != 0) for i in range(batch_inputs.size(0))]
-        
-        # Empaquetar las secuencias
-        packed_inputs = pack_padded_sequence(batch_inputs, lengths, batch_first=True, enforce_sorted=False)
-       
-        # Pasar las secuencias empaquetadas a la red neuronal
-        packed_outputs = net(packed_inputs)
 
-        # Desempaquetar las secuencias
-        outputs = packed_outputs.data
+        # Pass the sequences to the neural network
+        outputs = net(batch_inputs)
 
-        # Calcular las longitudes de las secuencias en el lote
-        lengths = torch.tensor([torch.sum(batch_inputs[i, :] != 0) for i in range(batch_inputs.size(0))])
-
-        # Obtener la máscara de elementos válidos
-        mask = torch.arange(outputs.size(1)).unsqueeze(0) < lengths.unsqueeze(1)
-        mask = mask.expand_as(outputs)
-
- 
-        # Seleccionar los elementos válidos utilizando la máscara
-        masked_outputs = torch.masked_select(outputs, mask)
-        masked_labels = torch.masked_select(labels.repeat(1, max_length).unsqueeze(2).repeat(1, 1, 1), mask)
-
-        # Calcular la pérdida utilizando los elementos seleccionados
+        # Calculate the loss using the mask
+        mask = torch.sum(batch_inputs != 0, dim=1) > 0  # Creating a mask to ignore the padded elements
+        masked_outputs = outputs[mask]
+        masked_labels = batch_labels[mask]
         loss = criterion(masked_outputs, masked_labels)
-
-
+        
         loss.backward()
         optimizer.step()
-        
+
         running_loss += loss.item()
-    
+
     average_loss = running_loss / len(dataloader)
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {average_loss}")
-    
-# Guardar el modelo entrenado
+
 torch.save(net.state_dict(), 'modelo_entrenado.pth')
 
-# Cargar el modelo entrenado
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
 net.load_state_dict(torch.load('modelo_entrenado.pth'))
 net.eval()
 
-# Realizar predicciones
-input_test = torch.tensor([1.2, 0.5, 0.8], dtype=torch.float32)  # Ejemplo de características de prueba
-output_test = net(input_test)
+input_test = torch.tensor([1.2, 0.5, 0.8], dtype=torch.float32)  # Example test features
+output_test = net(input_test.unsqueeze(0))  # Note the unsqueeze to add the batch dimension
 predicted_label = torch.argmax(output_test).item()
 
-# Obtener la etiqueta predicha
-etiqueta_predicha = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
-print("Etiqueta predicha:", etiqueta_predicha)
+predicted_label_text = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
+print("Predicted label:", predicted_label_text)
