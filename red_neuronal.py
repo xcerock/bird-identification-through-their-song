@@ -73,6 +73,7 @@ batch_size = 4
 dataset = torch.utils.data.TensorDataset(input_data, labels)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
+# Entrenamiento de la red neuronal
 num_epochs = 10
 
 for epoch in range(num_epochs):
