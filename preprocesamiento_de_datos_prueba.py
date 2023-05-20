@@ -8,7 +8,7 @@ archivos_audio = os.listdir(carpeta_audio)
 n_fft = 1024
 num_caracteristicas_seleccionadas = 3
 
-correlaciones = []
+correlaciones_prueba = []
 
 for archivo in archivos_audio:
     ruta_audio = os.path.join(carpeta_audio, archivo)
@@ -23,11 +23,11 @@ for archivo in archivos_audio:
         std_media_frecuencias = np.std(media_frecuencias)
 
         if std_media_frecuencias != 0:
-            correlaciones.append(np.sort(media_frecuencias)[-num_caracteristicas_seleccionadas:])
+            correlaciones_prueba.append(np.sort(media_frecuencias)[-num_caracteristicas_seleccionadas:])
 
     except Exception as e:
         print(f"Error al procesar el archivo {archivo}: {str(e)}")
 
-input_data_pruebas = torch.tensor(np.array(correlaciones), dtype=torch.float32)
+input_data_pruebas = torch.tensor(np.array(correlaciones_prueba), dtype=torch.float32)
 
 print("Dimensiones de input_data:", input_data_pruebas.size())

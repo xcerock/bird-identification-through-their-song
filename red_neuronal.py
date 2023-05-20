@@ -4,6 +4,7 @@ import torch.optim as optim
 from torch.nn.utils.rnn import pad_sequence,pack_padded_sequence, pad_packed_sequence
 from torch.utils.data import DataLoader
 from preprocesamiento_de_datos import *
+from preprocesamiento_de_datos_prueba import *
 
 # Convertir etiquetas de texto a valores numéricos
 etiquetas_numericas = {
@@ -99,7 +100,7 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {average_loss}")
 
 torch.save(net.state_dict(), 'modelo_entrenado.pth')
-
+'''
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
 net.load_state_dict(torch.load('modelo_entrenado.pth'))
 net.eval()
@@ -109,4 +110,21 @@ output_test = net(input_test.unsqueeze(0))  # Note the unsqueeze to add the batc
 predicted_label = torch.argmax(output_test).item()
 
 predicted_label_text = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
-print("Predicted label:", predicted_label_text) 
+print("Predicted label:", predicted_label_text) '''
+
+# Cargar el modelo entrenado
+net = BirdClassificationNet(input_size, hidden_size, num_classes)
+net.load_state_dict(torch.load('modelo_entrenado.pth'))
+net.eval()
+
+# Realizar predicciones en los datos de prueba
+outputs_test = net(input_data_pruebas)
+predicted_labels = torch.argmax(outputs_test, dim=1)
+
+# Convertir las etiquetas numéricas a etiquetas de texto
+predicted_labels_text = [list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(label)] for label in predicted_labels]
+
+# Imprimir las predicciones
+print("Predicciones en los datos de prueba:")
+for i, predicted_label_text in enumerate(predicted_labels_text):
+    print(f"Datos de prueba {i+1}: {predicted_label_text}")
