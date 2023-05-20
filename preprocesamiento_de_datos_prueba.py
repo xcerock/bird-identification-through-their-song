@@ -28,6 +28,6 @@ for archivo in archivos_audio:
     except Exception as e:
         print(f"Error al procesar el archivo {archivo}: {str(e)}")
 
-input_data = torch.tensor(np.array(correlaciones), dtype=torch.float32)
+input_data_pruebas = torch.tensor(np.array(correlaciones), dtype=torch.float32)
 
-print("Dimensiones de input_data:", input_data.size())
+print("Dimensiones de input_data:", input_data_pruebas.size())
