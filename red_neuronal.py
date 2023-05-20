@@ -100,6 +100,7 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {average_loss}")
 
 torch.save(net.state_dict(), 'modelo_entrenado.pth')
+
 '''
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
 net.load_state_dict(torch.load('modelo_entrenado.pth'))
