@@ -56,21 +56,46 @@ class BirdClassificationNet(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
         super(BirdClassificationNet, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
-        self.dropout = nn.Dropout(0.5)  # Agregar una capa de dropout con una probabilidad de 0.5
-        self.fc2 = nn.Linear(hidden_size, num_classes)
+        self.relu = nn.ReLU()
+        self.dropout1 = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc3 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = self.dropout(x)  # Aplicar dropout después de la primera capa oculta
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout1(x)
         x = self.fc2(x)
+        x = self.relu(x)
+        x = self.dropout2(x)
+        x = self.fc3(x)
         return x
 
 
-input_size = input_data.size(1)  # Size of the input layer
-hidden_size = 64
-num_classes = len(set(etiquetas_convertidas))
-criterion = nn.CrossEntropyLoss()
+# Parámetros de la red neuronal
+input_size = input_data.size(1)  # Tamaño de la capa de entrada
+hidden_size = 128  # Tamaño de las capas ocultas
+num_classes = len(set(etiquetas_convertidas))  # Número de clases
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, alpha=0.5):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, input, target):
+        ce_loss = nn.CrossEntropyLoss()(input, target)
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        return focal_loss
+
+# Utilizar la pérdida focal en lugar de la entropía cruzada
+criterion = FocalLoss()
+
+# Crear la instancia del modelo
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
+
 optimizer = optim.Adam(net.parameters(), lr=0.001)
 
 batch_size = 4
