@@ -138,17 +138,15 @@ for epoch in range(num_epochs):
 
 torch.save(net.state_dict(), 'modelo_entrenado.pth')
 
-'''
-net = BirdClassificationNet(input_size, hidden_size, num_classes)
-net.load_state_dict(torch.load('modelo_entrenado.pth'))
-net.eval()
+# Verificar las dimensiones y valores de los datos de entrada
+print("Dimensiones de input_data_pruebas:", input_data_pruebas.shape)
+print("Dimensiones de input_data:", input_data.shape)
+print("Dimensiones de targets:", targets.shape)
+print("Valores de input_data_pruebas:", input_data_pruebas)
 
-input_test = torch.tensor([1.2, 0.5, 0.8], dtype=torch.float32)  # Example test features
-output_test = net(input_test.unsqueeze(0))  # Note the unsqueeze to add the batch dimension
-predicted_label = torch.argmax(output_test).item()
+# Verificar los valores de los datos de entrada
+print("Valores de input_data:", input_data)
 
-predicted_label_text = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
-print("Predicted label:", predicted_label_text) '''
 
 # Cargar el modelo entrenado
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
