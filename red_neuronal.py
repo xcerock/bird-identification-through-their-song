@@ -60,7 +60,9 @@ class BirdClassificationNet(nn.Module):
         self.dropout1 = nn.Dropout(0.5)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(hidden_size, num_classes)
+        self.fc3 = nn.Linear(hidden_size, hidden_size)
+        self.dropout3 = nn.Dropout(0.5)
+        self.fc4 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -70,15 +72,19 @@ class BirdClassificationNet(nn.Module):
         x = self.relu(x)
         x = self.dropout2(x)
         x = self.fc3(x)
+        x = self.relu(x)
+        x = self.dropout3(x)
+        x = self.fc4(x)
         return x
+
 
 
 # Parámetros de la red neuronal
 input_size = input_data.size(1)  # Tamaño de la capa de entrada
-hidden_size = 128  # Tamaño de las capas ocultas
+hidden_size = 512  # Tamaño de las capas ocultas
 num_classes = len(set(etiquetas_convertidas))  # Número de clases
 
-class FocalLoss(nn.Module):
+'''class FocalLoss(nn.Module):
     def __init__(self, gamma=2.0, alpha=0.5):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
@@ -91,19 +97,22 @@ class FocalLoss(nn.Module):
         return focal_loss
 
 # Utilizar la pérdida focal en lugar de la entropía cruzada
-criterion = FocalLoss()
+criterion = FocalLoss()'''
+
+criterion = nn.CrossEntropyLoss()
+
 
 # Crear la instancia del modelo
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
 
-optimizer = optim.Adam(net.parameters(), lr=0.001)
+optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
 batch_size = 4
 dataset = torch.utils.data.TensorDataset(input_data, labels)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Entrenamiento de la red neuronal
-num_epochs = 10
+num_epochs = 20
 
 for epoch in range(num_epochs):
     running_loss = 0.0
@@ -156,4 +165,4 @@ predicted_labels_text = [list(etiquetas_numericas.keys())[list(etiquetas_numeric
 # Imprimir las predicciones
 print("Predicciones en los datos de prueba:")
 for i, predicted_label_text in enumerate(predicted_labels_text):
-    print(f"Datos de prueba {i+1}: {predicted_label_text}")
+    print(f"Dato de prueba {i+1}: {predicted_label_text}")
