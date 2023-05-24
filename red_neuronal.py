@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.nn.utils.rnn import pad_sequence,pack_padded_sequence, pad_packed_sequence
-from torch.utils.data import DataLoader
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader, TensorDataset
 from preprocesamiento_de_datos import *
 from preprocesamiento_de_datos_prueba import *
 
@@ -30,15 +30,13 @@ etiquetas_numericas = {
 
 etiquetas_convertidas = [etiquetas_numericas[etiqueta] for etiqueta in etiquetas]
 
-
 inputs = []  # Lista para almacenar las características seleccionadas
 
 for etiqueta in etiquetas:
     caracteristicas_etiqueta = correlaciones.get(etiqueta, [])  # Obtener las características para la etiqueta
-    
+
     if len(caracteristicas_etiqueta) > 0:
         inputs.append(caracteristicas_etiqueta)  # Agregar las características a la lista "inputs"
-        
 
 # Convertir la lista de inputs en tensores del mismo tamaño
 max_length = max(len(x) for x in inputs)
@@ -77,30 +75,12 @@ class BirdClassificationNet(nn.Module):
         x = self.fc4(x)
         return x
 
-
-
 # Parámetros de la red neuronal
 input_size = input_data.size(1)  # Tamaño de la capa de entrada
 hidden_size = 512  # Tamaño de las capas ocultas
 num_classes = len(set(etiquetas_convertidas))  # Número de clases
 
-'''class FocalLoss(nn.Module):
-    def __init__(self, gamma=2.0, alpha=0.5):
-        super(FocalLoss, self).__init__()
-        self.gamma = gamma
-        self.alpha = alpha
-
-    def forward(self, input, target):
-        ce_loss = nn.CrossEntropyLoss()(input, target)
-        pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
-        return focal_loss
-
-# Utilizar la pérdida focal en lugar de la entropía cruzada
-criterion = FocalLoss()'''
-
 criterion = nn.CrossEntropyLoss()
-
 
 # Crear la instancia del modelo
 net = BirdClassificationNet(input_size, hidden_size, num_classes)
@@ -108,7 +88,7 @@ net = BirdClassificationNet(input_size, hidden_size, num_classes)
 optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
 batch_size = 4
-dataset = torch.utils.data.TensorDataset(input_data, labels)
+dataset = TensorDataset(input_data, labels)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Entrenamiento de la red neuronal
@@ -127,7 +107,7 @@ for epoch in range(num_epochs):
         masked_outputs = outputs[mask]
         masked_labels = batch_labels[mask]
         loss = criterion(masked_outputs, masked_labels)
-        
+
         loss.backward()
         optimizer.step()
 
@@ -140,25 +120,7 @@ torch.save(net.state_dict(), 'modelo_entrenado.pth')
 
 # Verificar las dimensiones y valores de los datos de entrada
 print("Dimensiones de input_data_pruebas:", input_data_pruebas.shape)
-print("Dimensiones de input_data:", input_data.shape)
-print("Dimensiones de targets:", targets.shape)
 print("Valores de input_data_pruebas:", input_data_pruebas)
-
-# Verificar los valores de los datos de entrada
-print("Valores de input_data:", input_data)
-
-
-'''
-net = BirdClassificationNet(input_size, hidden_size, num_classes)
-net.load_state_dict(torch.load('modelo_entrenado.pth'))
-net.eval()
-
-input_test = torch.tensor([1.2, 0.5, 0.8], dtype=torch.float32)  # Example test features
-output_test = net(input_test.unsqueeze(0))  # Note the unsqueeze to add the batch dimension
-predicted_label = torch.argmax(output_test).item()
-
-predicted_label_text = list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(predicted_label)]
-print("Predicted label:", predicted_label_text) '''
 
 # Cargar el modelo entrenado
 net = BirdClassificationNet(input_size, hidden_size, num_classes)

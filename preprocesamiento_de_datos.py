@@ -46,11 +46,6 @@ for archivo, etiqueta in zip(archivos_audio, etiquetas):
     except Exception as e:
         print(f"Error al procesar el archivo {archivo}: {str(e)}")
 
-etiquetas_numericas = {etiqueta: indice for indice, etiqueta in enumerate(set(etiquetas))}
-etiquetas_convertidas = [etiquetas_numericas[etiqueta] for etiqueta in etiquetas]
-
 input_data = torch.tensor(np.array(list(correlaciones.values())), dtype=torch.float32)
-targets = torch.tensor(etiquetas_convertidas, dtype=torch.long)
 
 print("Dimensiones de input_data:", input_data.size())
-print("Dimensiones de targets:", targets.size())
