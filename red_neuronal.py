@@ -31,10 +31,12 @@ etiquetas_numericas = {
 
 etiquetas_convertidas = [etiquetas_numericas[etiqueta] for etiqueta in etiquetas]
 
+
+
 inputs = []  # Lista para almacenar las características seleccionadas
 
-for etiqueta in etiquetas:
-    caracteristicas_etiqueta = correlaciones.get(etiqueta, [])  # Obtener las características para la etiqueta
+for i in range(len(etiquetas)):
+    caracteristicas_etiqueta = correlaciones[i]  # Obtener las características para el índice actual
 
     if len(caracteristicas_etiqueta) > 0:
         inputs.append(caracteristicas_etiqueta)  # Agregar las características a la lista "inputs"
@@ -50,6 +52,11 @@ labels = torch.tensor(etiquetas_convertidas, dtype=torch.long)
 
 # Verificar las dimensiones de input_data
 print("Dimensiones de input_data:", input_data.size())
+
+# Parámetros de la red neuronal
+input_size = input_data.size(1)  # Tamaño de la capa de entrada
+hidden_size = 512  # Tamaño de las capas ocultas
+num_classes = len(set(etiquetas_convertidas))  # Número de clases
 
 class BirdClassificationNet(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -76,6 +83,22 @@ class BirdClassificationNet(nn.Module):
         x = self.fc4(x)
         return x
 
+# Crear la instancia del modelo
+modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
+optimizer = optim.Adam(modelo.parameters(), lr=0.0001)
+
+# Crear un TensorDataset y dividir en entrenamiento y validación
+dataset = TensorDataset(input_data, labels)
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+# Crear DataLoaders para los conjuntos de entrenamiento y validación
+batch_size = 4
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+
+
 # Parámetros de la red neuronal
 input_size = input_data.size(1)  # Tamaño de la capa de entrada
 hidden_size = 512  # Tamaño de las capas ocultas
@@ -87,19 +110,20 @@ criterion = nn.CrossEntropyLoss()
 modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
 optimizer = optim.Adam(modelo.parameters(), lr=0.0001)
 
-batch_size = 4
-dataset = TensorDataset(input_data, labels)
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
 # Dividir los datos en entrenamiento y validación
+dataset = TensorDataset(input_data, labels)
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-# Crea dataloaders para los conjuntos de entrenamiento y validación
+batch_size = 4
+
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+
+# Crear DataLoaders para los conjuntos de entrenamiento y validación
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-
 
 # Entrenamiento de la red neuronal
 num_epochs = 20
@@ -132,6 +156,9 @@ for epoch in range(num_epochs):
             val_mask = (val_labels >= 0)
             val_loss = criterion(val_outputs[val_mask], val_labels[val_mask])
             val_running_loss += val_loss.item()
+            
+        # Guardar el modelo después de cada época
+        torch.save(modelo.state_dict(), f'modelo_entrenado_{epoch}.pth')
     
     val_epoch_loss = val_running_loss / len(val_dataloader)
     average_loss = running_loss / len(dataloader)
@@ -145,15 +172,23 @@ print("Dimensiones de input_data_pruebas:", input_data_pruebas.shape)
 print("Valores de input_data_pruebas:", input_data_pruebas)
 
 # Cargar el modelo entrenado
+try:
+    modelo.load_state_dict(torch.load('modelo_entrenado.pth'))
+    modelo.eval()
+except Exception as e:
+    print(f"No se pudo cargar el modelo debido a: {str(e)}")
+    sys.exit()
 
-modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
-modelo.load_state_dict(torch.load('modelo_entrenado.pth'))
-modelo.eval()
 
 
 # Realizar predicciones en los datos de prueba
 outputs_test = modelo(input_data_pruebas)
 predicted_labels = torch.argmax(outputs_test, dim=1)
+
+try:
+    predicciones = modelo(test_data)
+except Exception as e:
+    print(f"No se pudo realizar las predicciones debido a: {str(e)}")
 
 # Convertir las etiquetas numéricas a etiquetas de texto
 predicted_labels_text = [list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(label)] for label in predicted_labels]

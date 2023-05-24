@@ -22,7 +22,11 @@ etiquetas = ['Bulbul naranjero', 'Candelita plomiza', 'Carbonero común', 'Cotor
 assert len(archivos_audio) == len(etiquetas), "Debe haber la misma cantidad de archivos de audio y etiquetas"
 
 caracteristicas_seleccionadas = []
-correlaciones = {}
+#correlaciones = {}
+correlaciones = []
+etiquetas_final = []
+
+
 
 # Definir transformaciones de aumentación de datos con Audiomentations
 augmentations = Compose([
@@ -40,7 +44,6 @@ for archivo, etiqueta in zip(archivos_audio, etiquetas):
 
         mel_spectrogram = librosa.feature.melspectrogram(y=augmented_audio, sr=sr, n_fft=n_fft, n_mels=n_mels)
 
-
         mean = np.mean(mel_spectrogram)
         std = np.std(mel_spectrogram)
         median = np.median(mel_spectrogram)
@@ -48,10 +51,12 @@ for archivo, etiqueta in zip(archivos_audio, etiquetas):
         kurtosis = stats.kurtosis(mel_spectrogram.flatten())
 
         features = np.array([mean, std, median, skewness, kurtosis])
-        correlaciones[etiqueta] = features
+        correlaciones.append(features)
+        etiquetas_final.append(etiqueta)
 
     except Exception as e:
         print(f"Error al procesar el archivo {archivo}: {str(e)}")
 
-input_data = torch.tensor(np.array(list(correlaciones.values())), dtype=torch.float32)
+input_data = torch.tensor(np.array(correlaciones), dtype=torch.float32)
+labels = LabelEncoder().fit_transform(etiquetas_final)
 print("Dimensiones de input_data:", input_data.size())
