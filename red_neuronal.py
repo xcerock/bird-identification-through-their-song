@@ -6,9 +6,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from preprocesamiento_de_datos import *
 from preprocesamiento_de_datos_prueba import *
 
+
 # Convertir etiquetas de texto a valores numéricos
 etiquetas_numericas = {
-    'Bulbul  naranjero': 0,
+    'Bulbul naranjero': 0,
     'Candelita plomiza': 1,
     'Carbonero común': 2,
     'Cotorrita aliazul': 3,
@@ -83,24 +84,34 @@ num_classes = len(set(etiquetas_convertidas))  # Número de clases
 criterion = nn.CrossEntropyLoss()
 
 # Crear la instancia del modelo
-net = BirdClassificationNet(input_size, hidden_size, num_classes)
-
-optimizer = optim.Adam(net.parameters(), lr=0.0001)
+modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
+optimizer = optim.Adam(modelo.parameters(), lr=0.0001)
 
 batch_size = 4
 dataset = TensorDataset(input_data, labels)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# Dividir los datos en entrenamiento y validación
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+# Crea dataloaders para los conjuntos de entrenamiento y validación
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+
 
 # Entrenamiento de la red neuronal
 num_epochs = 20
 
 for epoch in range(num_epochs):
     running_loss = 0.0
-    for batch_inputs, batch_labels in dataloader:
+    for batch_inputs, batch_labels in train_dataloader:
+
         optimizer.zero_grad()
 
         # Pass the sequences to the neural network
-        outputs = net(batch_inputs)
+        outputs = modelo(batch_inputs)
 
         # Calculate the loss using the mask
         mask = torch.sum(batch_inputs != 0, dim=1) > 0  # Creating a mask to ignore the padded elements
@@ -112,27 +123,41 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         running_loss += loss.item()
-
+        
+        # Evaluación del rendimiento del modelo en el conjunto de validación
+        val_running_loss = 0.0
+        modelo.eval()
+        for val_inputs, val_labels in val_dataloader:
+            val_outputs = modelo(val_inputs)
+            val_mask = (val_labels >= 0)
+            val_loss = criterion(val_outputs[val_mask], val_labels[val_mask])
+            val_running_loss += val_loss.item()
+    
+    val_epoch_loss = val_running_loss / len(val_dataloader)
     average_loss = running_loss / len(dataloader)
-    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {average_loss}")
+    print(f'Epoch: {epoch+1}, Train Loss: {average_loss:.4f}, Val Loss: {val_epoch_loss:.4f}')
 
-torch.save(net.state_dict(), 'modelo_entrenado.pth')
+
+torch.save(modelo.state_dict(), 'modelo.pt')
 
 # Verificar las dimensiones y valores de los datos de entrada
 print("Dimensiones de input_data_pruebas:", input_data_pruebas.shape)
 print("Valores de input_data_pruebas:", input_data_pruebas)
 
 # Cargar el modelo entrenado
-net = BirdClassificationNet(input_size, hidden_size, num_classes)
-net.load_state_dict(torch.load('modelo_entrenado.pth'))
-net.eval()
+
+modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
+modelo.load_state_dict(torch.load('modelo.pt'))
+modelo.eval()
+
 
 # Realizar predicciones en los datos de prueba
-outputs_test = net(input_data_pruebas)
+outputs_test = modelo(input_data_pruebas)
 predicted_labels = torch.argmax(outputs_test, dim=1)
 
 # Convertir las etiquetas numéricas a etiquetas de texto
 predicted_labels_text = [list(etiquetas_numericas.keys())[list(etiquetas_numericas.values()).index(label)] for label in predicted_labels]
+
 
 # Imprimir las predicciones
 print("Predicciones en los datos de prueba:")
