@@ -138,7 +138,7 @@ for epoch in range(num_epochs):
     print(f'Epoch: {epoch+1}, Train Loss: {average_loss:.4f}, Val Loss: {val_epoch_loss:.4f}')
 
 
-torch.save(modelo.state_dict(), 'modelo.pt')
+torch.save(modelo.state_dict(), 'modelo_entrenado.pth')
 
 # Verificar las dimensiones y valores de los datos de entrada
 print("Dimensiones de input_data_pruebas:", input_data_pruebas.shape)
@@ -147,7 +147,7 @@ print("Valores de input_data_pruebas:", input_data_pruebas)
 # Cargar el modelo entrenado
 
 modelo = BirdClassificationNet(input_size, hidden_size, num_classes)
-modelo.load_state_dict(torch.load('modelo.pt'))
+modelo.load_state_dict(torch.load('modelo_entrenado.pth'))
 modelo.eval()
 
 
